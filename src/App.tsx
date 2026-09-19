@@ -137,6 +137,12 @@ export default function App() {
     setProfile((prev) => ({ ...prev, soundEnabled: !prev.soundEnabled }));
   };
 
+  // Ref to always access current markets without recreating callbacks
+  const marketsRef = React.useRef(markets);
+  useEffect(() => {
+    marketsRef.current = markets;
+  }, [markets]);
+
   // Evaluate user guesses when a game result updates
   const evaluateUserGuesses = useCallback((marketId: string, openPana: string, jodi: string, closePana: string) => {
     setProfile((prevProfile) => {
@@ -194,6 +200,11 @@ export default function App() {
     status: 'upcoming' | 'open_declared' | 'closed'
   ) => {
     const timeNow = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    let marketName = marketId;
+    const currentMarket = marketsRef.current.find((m) => m.id === marketId);
+    if (currentMarket) {
+      marketName = currentMarket.name;
+    }
     
     setMarkets((prevMarkets) => {
       return prevMarkets.map((m) => {
@@ -204,7 +215,7 @@ export default function App() {
         const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
         const dayName = days[new Date().getDay()];
 
-        const updatedHistory = [...m.chartHistory];
+        const updatedHistory = [...(m.chartHistory || [])];
         // replace today's record if already exists or prepend
         const existingIdx = updatedHistory.findIndex((r) => r.date === todayStr);
         const newRecord: ChartRecord = {
@@ -238,30 +249,33 @@ export default function App() {
     setTimeout(() => setRecentlyUpdatedId(null), 4000);
 
     if (profile.soundEnabled) {
-      playResultChime();
+      try {
+        playResultChime();
+      } catch {
+        // Safe sound fallback
+      }
     }
 
     // Evaluate demo bets
     evaluateUserGuesses(marketId, openPana, jodi, closePana);
 
     // Add to update log
-    const updatedMarket = markets.find((m) => m.id === marketId);
-    const mName = updatedMarket ? updatedMarket.name : marketId;
     setUpdateLog((prev) => [
-      { time: timeNow, text: `${mName} रिजल्ट [${openPana}-${jodi}-${closePana}] अपडेट हुआ` },
+      { time: timeNow, text: `${marketName} रिजल्ट [${openPana}-${jodi}-${closePana}] अपडेट हुआ` },
       ...prev.slice(0, 9),
     ]);
-  }, [markets, profile.soundEnabled, evaluateUserGuesses]);
+  }, [profile.soundEnabled, evaluateUserGuesses]);
 
   // Automated result update trigger (used by background auto engine and quick flash)
   const handleTriggerInstantAutoUpdate = useCallback((targetMarketId?: string) => {
+    const currentMarkets = marketsRef.current;
     // Pick eligible markets that have autoUpdateEnabled
-    const eligibleMarkets = markets.filter((m) => m.autoUpdateEnabled !== false);
+    const eligibleMarkets = currentMarkets.filter((m) => m.autoUpdateEnabled !== false);
     if (eligibleMarkets.length === 0) return;
 
     let target: MatkaMarket;
     if (targetMarketId) {
-      target = markets.find((m) => m.id === targetMarketId) || eligibleMarkets[0];
+      target = currentMarkets.find((m) => m.id === targetMarketId) || eligibleMarkets[0];
     } else {
       // Pick a random eligible game
       const randIdx = Math.floor(Math.random() * eligibleMarkets.length);
@@ -274,7 +288,7 @@ export default function App() {
     const jodi = `${open.ank}${close.ank}`;
 
     handleSaveResult(target.id, open.pana, jodi, close.pana, 'closed');
-  }, [markets, handleSaveResult]);
+  }, [handleSaveResult]);
 
   // Add new game
   const handleAddMarket = (newMarket: MatkaMarket) => {

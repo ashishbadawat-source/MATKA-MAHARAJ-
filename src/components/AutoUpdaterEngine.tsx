@@ -30,20 +30,21 @@ export const AutoUpdaterEngine: React.FC<AutoUpdaterEngineProps> = ({
 
   useEffect(() => {
     if (!isAutoUpdating) return;
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          // Trigger automated result update outside of the state calculation phase
-          setTimeout(() => {
-            onTriggerRef.current();
-          }, 0);
-          return 30; // reset to 30 seconds
-        }
-        return prev - 1;
-      });
+
+    // 1. Ticking interval purely for visual countdown display
+    const countdownInterval = setInterval(() => {
+      setCountdown((prev) => (prev <= 1 ? 30 : prev - 1));
     }, 1000);
 
-    return () => clearInterval(timer);
+    // 2. Action interval running cleanly on its own cadence
+    const updateInterval = setInterval(() => {
+      onTriggerRef.current();
+    }, 30000);
+
+    return () => {
+      clearInterval(countdownInterval);
+      clearInterval(updateInterval);
+    };
   }, [isAutoUpdating]);
 
   return (

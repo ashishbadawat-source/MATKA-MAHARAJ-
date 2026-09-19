@@ -72,11 +72,18 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
   });
 
   const handleCopy = () => {
-    const text = `${currentMarket.name} MATKA CHART RECORD\n` +
-      history.slice(0, 10).map(r => `${r.date} (${r.day}): ${r.openPana}-${r.jodi}-${r.closePana}`).join('\n');
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      const marketTitle = currentMarket ? currentMarket.name : 'MATKA';
+      const text = `${marketTitle} MATKA CHART RECORD\n` +
+        history.slice(0, 10).map(r => `${r.date} (${r.day}): ${r.openPana}-${r.jodi}-${r.closePana}`).join('\n');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).catch(() => {});
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // safe fallback
+    }
   };
 
   return (
