@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BarChart3, Table, Search, Calendar, Download, Copy, Check, ChevronDown } from 'lucide-react';
 import { MatkaMarket, ChartRecord } from '../types';
 import { isRedJodi } from '../utils/matkaUtils';
@@ -20,6 +20,18 @@ export const ChartViewer: React.FC<ChartViewerProps> = ({
   const [chartMode, setChartMode] = useState<'jodi' | 'panel'>(initialMode);
   const [searchQuery, setSearchQuery] = useState('');
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (initialMarketId) {
+      setSelectedMarketId(initialMarketId);
+    }
+  }, [initialMarketId]);
+
+  useEffect(() => {
+    if (initialMode) {
+      setChartMode(initialMode);
+    }
+  }, [initialMode]);
 
   const currentMarket = markets.find((m) => m.id === selectedMarketId) || markets[0];
   const history: ChartRecord[] = currentMarket?.chartHistory || [];

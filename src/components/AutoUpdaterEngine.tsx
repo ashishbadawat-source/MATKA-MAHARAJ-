@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, Zap, Clock, ShieldCheck, Activity, RotateCw } from 'lucide-react';
 import { MatkaMarket } from '../types';
 
@@ -22,13 +22,21 @@ export const AutoUpdaterEngine: React.FC<AutoUpdaterEngineProps> = ({
   const [countdown, setCountdown] = useState(25);
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Keep a stable ref to onTriggerInstantAutoUpdate so interval doesn't re-subscribe on every market state change
+  const onTriggerRef = useRef(onTriggerInstantAutoUpdate);
+  useEffect(() => {
+    onTriggerRef.current = onTriggerInstantAutoUpdate;
+  }, [onTriggerInstantAutoUpdate]);
+
   useEffect(() => {
     if (!isAutoUpdating) return;
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
-          // Trigger automated result update cycle
-          onTriggerInstantAutoUpdate();
+          // Trigger automated result update outside of the state calculation phase
+          setTimeout(() => {
+            onTriggerRef.current();
+          }, 0);
           return 30; // reset to 30 seconds
         }
         return prev - 1;
@@ -36,7 +44,7 @@ export const AutoUpdaterEngine: React.FC<AutoUpdaterEngineProps> = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isAutoUpdating, onTriggerInstantAutoUpdate]);
+  }, [isAutoUpdating]);
 
   return (
     <div className="bg-gradient-to-r from-stone-900 via-stone-850 to-stone-900 border border-amber-500/30 rounded-xl p-3 sm:p-4 shadow-lg mb-6">
