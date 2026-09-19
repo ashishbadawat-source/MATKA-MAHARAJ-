@@ -1,0 +1,6 @@
+{
+  "name": "Matka Maharaj",
+  "description": "सट्टा मटका लाइव रिजल्ट, कल्याण और सभी मार्केट चार्ट्स, नए गेम एडमिन और ऑटो-अपडेट इंजन।",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
